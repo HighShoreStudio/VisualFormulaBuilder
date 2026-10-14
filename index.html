@@ -43,6 +43,10 @@
       <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
       <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 2.8 19a1 1 0 0 0 .9 1.5h16.6a1 1 0 0 0 .9-1.5z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".6"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-focus" viewBox="0 0 24 24"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/><rect x="8.5" y="8.5" width="7" height="7" rx="1.5"/></symbol>
+      <symbol id="i-unfocus" viewBox="0 0 24 24"><path d="M9 4v4a1 1 0 0 1-1 1H4M20 9h-4a1 1 0 0 1-1-1V4M15 20v-4a1 1 0 0 1 1-1h4M4 15h4a1 1 0 0 1 1 1v4"/></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3"/></symbol>
       <symbol id="i-rotate" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18.5h4"/></symbol>
       <symbol id="i-logo" viewBox="0 0 32 32"><rect x="1" y="1" width="30" height="30" rx="8" fill="currentColor" stroke="none"/><text x="16" y="21.5" text-anchor="middle" font-family="-apple-system,Segoe UI,sans-serif" font-size="14" font-weight="700" font-style="italic" fill="#fff" stroke="none">fx</text></symbol>
     </defs>
@@ -58,7 +62,7 @@
       <div class="tb-center">
         <div class="segmented" id="modeSeg" data-tip="modeTip" role="tablist">
           <button data-mode="excel" role="tab"><span class="dot dot-excel"></span><span data-t="modeExcel"></span></button>
-          <button data-mode="gsheets" role="tab"><span class="dot dot-sheets"></span><span data-t="modeSheets"></span></button>
+          <button data-mode="gsheets" role="tab"><span class="dot dot-sheets"></span><span class="l-long" data-t="modeSheets"></span><span class="l-short" data-t="modeSheetsShort"></span></button>
           <span class="seg-thumb"></span>
         </div>
       </div>
@@ -66,6 +70,7 @@
         <button class="icon-btn" id="btnUndo" data-tip="undo"><svg><use href="#i-undo"/></svg></button>
         <button class="icon-btn" id="btnRedo" data-tip="redo"><svg><use href="#i-redo"/></svg></button>
         <button class="icon-btn" id="btnArrange" data-tip="arrangeTip"><svg><use href="#i-arrange"/></svg></button>
+        <button class="icon-btn" id="btnFocus" data-tip="focusTip"><svg><use href="#i-focus"/></svg></button>
         <div class="segmented small" id="langSeg" data-tip="langTip">
           <button data-lang="it">IT</button><button data-lang="en">EN</button><span class="seg-thumb"></span>
         </div>
@@ -73,6 +78,11 @@
         <div class="menu-wrap">
           <button class="icon-btn" id="btnMenu" data-tip="menu"><svg><use href="#i-more"/></svg></button>
           <div class="menu" id="menu" hidden>
+            <div class="menu-lang">
+              <svg><use href="#i-globe"/></svg><span data-t="language"></span>
+              <div class="segmented small" id="langSeg2"><button data-lang="it">IT</button><button data-lang="en">EN</button><span class="seg-thumb"></span></div>
+            </div>
+            <div class="menu-sep menu-lang-sep"></div>
             <button data-act="import"><svg><use href="#i-import"/></svg><span data-t="importF"></span></button>
             <div class="menu-sub">
               <div class="menu-label" data-t="examples"></div>
@@ -96,12 +106,13 @@
     <!-- ============ WORKSPACE ============ -->
     <main class="workspace">
       <aside class="library" id="library">
+        <div class="sheet-grabber"></div>
         <div class="lib-head">
           <div class="search">
             <svg><use href="#i-search"/></svg>
             <input id="libSearch" type="search" autocomplete="off" spellcheck="false">
           </div>
-          <button class="icon-btn only-compact" id="btnLibClose" data-tip="closePanel"><svg><use href="#i-close"/></svg></button>
+          <button class="icon-btn only-overlay" id="btnLibClose" data-tip="closePanel"><svg><use href="#i-close"/></svg></button>
         </div>
         <div class="lib-list" id="libList"></div>
       </aside>
@@ -125,6 +136,7 @@
       </section>
 
       <aside class="sidebar" id="sidebar">
+        <div class="sheet-grabber"></div>
         <div class="sb-head">
           <div class="sb-title" data-t="explain"></div>
           <button class="icon-btn" id="btnSbClose" data-tip="closePanel"><svg><use href="#i-close"/></svg></button>
@@ -145,6 +157,17 @@
         <button class="btn primary" id="btnCopy" data-tip="copyTip"><svg><use href="#i-copy"/></svg><span data-t="copy"></span></button>
       </div>
     </footer>
+
+    <!-- ============ TAB BAR (portrait layout) ============ -->
+    <nav class="tabbar" id="tabbar">
+      <button class="tab" data-cmd="library"><svg><use href="#i-blocks"/></svg><span data-t="tabBlocks"></span></button>
+      <button class="tab" data-cmd="undo"><svg><use href="#i-undo"/></svg><span data-t="undo"></span></button>
+      <button class="tab" data-cmd="redo"><svg><use href="#i-redo"/></svg><span data-t="redo"></span></button>
+      <button class="tab" data-cmd="arrange"><svg><use href="#i-arrange"/></svg><span data-t="tabArrange"></span></button>
+      <button class="tab" data-cmd="guide"><svg><use href="#i-book"/></svg><span data-t="tabGuide"></span></button>
+    </nav>
+
+    <button class="focus-exit" id="btnFocusExit" data-tip="focusExit"><svg><use href="#i-unfocus"/></svg></button>
   </div>
 
   <!-- Quick add popup -->
@@ -169,11 +192,6 @@
 
   <div class="toast" id="toast"></div>
   <div class="tooltip" id="tooltip"></div>
-  <div class="rotate" id="rotate">
-    <svg><use href="#i-rotate"/></svg>
-    <div class="rot-title" data-t="rotate"></div>
-    <div class="rot-sub" data-t="rotateSub"></div>
-  </div>
   <input type="file" id="fileInput" accept=".json,application/json" hidden>
 
   <script src="js/i18n.js"></script>

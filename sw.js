@@ -1,5 +1,5 @@
 /* Formula Builder — service worker (offline cache) */
-const CACHE = 'formula-builder-v1';
+const CACHE = 'formula-builder-v2';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest', './css/styles.css',
   './js/i18n.js', './js/functions.js', './js/engine.js', './js/app.js',

@@ -10,7 +10,12 @@
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const icon = id => `<svg><use href="#i-${id}"/></svg>`;
   const catOf = id => C.CATEGORIES.find(c => c.id === id);
-  const isCompact = () => window.matchMedia('(max-height: 560px), (max-width: 1080px)').matches;
+  // three separate interfaces: 'portrait' (any vertical screen, phone or PC),
+  // 'compact' (phone / small window in landscape) and 'desktop'
+  const MQ_PORTRAIT = window.matchMedia('(orientation: portrait)');
+  const MQ_COMPACT = window.matchMedia('(orientation: landscape) and (max-height: 560px), (orientation: landscape) and (max-width: 1080px)');
+  const layout = () => MQ_PORTRAIT.matches ? 'portrait' : MQ_COMPACT.matches ? 'compact' : 'desktop';
+  const isCompact = () => layout() !== 'desktop'; // panels float over the canvas
 
   /* ------------------------------- STATE -------------------------------- */
   const state = {
@@ -348,7 +353,10 @@
   }
   function undo() { if (!undoStack.length) return; redoStack.push(snap()); restore(undoStack.pop()); }
   function redo() { if (!redoStack.length) return; undoStack.push(snap()); restore(redoStack.pop()); }
-  function updateUndoButtons() { $('#btnUndo').disabled = !undoStack.length; $('#btnRedo').disabled = !redoStack.length; }
+  function updateUndoButtons() {
+    document.querySelectorAll('#btnUndo, [data-cmd="undo"]').forEach(b => { b.disabled = !undoStack.length; });
+    document.querySelectorAll('#btnRedo, [data-cmd="redo"]').forEach(b => { b.disabled = !redoStack.length; });
+  }
 
   /* ---------------------------- PERSISTENCE ----------------------------- */
   let saveTimer = null;
@@ -585,6 +593,7 @@
   function fitView(animate) {
     const ns = Object.values(state.g.nodes);
     if (!ns.length) return;
+    if (ns.length === 1 && !built.ast) { fitCenterResult(); return; }
     let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
     ns.forEach(n => { const c = portCache[n.id] || { w: 264, h: 150 }; x1 = Math.min(x1, n.x); y1 = Math.min(y1, n.y); x2 = Math.max(x2, n.x + c.w); y2 = Math.max(y2, n.y + c.h); });
     const r = dom.wrap.getBoundingClientRect();
@@ -1026,17 +1035,33 @@
 
   /* ------------------------------- SIDEBAR ------------------------------ */
   function openSidebar() {
+    if (focusMode) setFocus(false);
     state.sbOpen = true;
     if (isCompact()) dom.app.classList.remove('lib-open');
     dom.app.classList.add('sb-open');
     renderSidebar();
     scheduleSave();
-    setTimeout(() => { remeasureAll(); drawWires(); }, 420);
+    syncTabs();
+    if (!isCompact()) setTimeout(() => { remeasureAll(); drawWires(); }, 420);
   }
   function closeSidebar() {
     state.sbOpen = false;
     dom.app.classList.remove('sb-open');
     scheduleSave();
+    syncTabs();
+  }
+  function openLibrary() {
+    if (focusMode) setFocus(false);
+    dom.app.classList.remove('sb-open');
+    dom.app.classList.add('lib-open');
+    syncTabs();
+  }
+  function toggleLibrary() { if (dom.app.classList.contains('lib-open')) closeLibrary(); else openLibrary(); }
+  function closeLibrary() { dom.app.classList.remove('lib-open'); syncTabs(); }
+  function syncTabs() {
+    const lib = dom.app.classList.contains('lib-open'), sb = dom.app.classList.contains('sb-open');
+    document.querySelectorAll('[data-cmd="library"]').forEach(b => b.classList.toggle('on', lib));
+    document.querySelectorAll('[data-cmd="guide"]').forEach(b => b.classList.toggle('on', sb && layout() === 'portrait'));
   }
   function toggleSidebarGuide() {
     if (state.sbOpen && dom.app.classList.contains('sb-open') && sbTarget == null) { closeSidebar(); return; }
@@ -1105,7 +1130,7 @@
     return `<div class="sb-hero"><span class="node-icon" style="background:var(--accent)">?</span><div><div class="sb-name" style="font-family:var(--font)">${esc(t('welcomeTitle'))}</div><div class="sb-friendly">Formula Builder</div></div></div>
       <ol class="steps"><li>${esc(t('welcome1'))}</li><li>${esc(t('welcome2'))}</li><li>${esc(t('welcome3'))}</li><li>${esc(t('welcome4'))}</li></ol>
       <div class="sb-h">${esc(t('welcomeTips'))}</div>
-      <ul class="tricks"><li>${esc(t('trick1'))}</li><li>${esc(t('trick2'))}</li><li>${esc(t('trick3'))}</li><li>${esc(t('trick4'))}</li><li>${esc(t('trick5'))}</li></ul>
+      <ul class="tricks"><li>${esc(t('trick1'))}</li><li>${esc(t('trick2'))}</li><li>${esc(t('trick3'))}</li><li>${esc(t('trick4'))}</li><li>${esc(t('trick5'))}</li><li>${esc(t('trick6'))}</li></ul>
       <div class="sb-h">${esc(t('modesTitle'))}</div><p class="sb-p">${esc(t('modesText'))}</p>
       <div class="sb-foot">${esc(t('sourceGS'))}</div>`;
   }
@@ -1161,8 +1186,13 @@
     const r = dom.wrap.getBoundingClientRect();
     const res = resultNode();
     state.view.s = 1;
-    state.view.x = r.width * 0.64 - res.x - 115;
-    state.view.y = r.height * 0.42 - res.y - 40;
+    if (layout() === 'portrait') {
+      state.view.x = r.width * 0.5 - res.x - 115;
+      state.view.y = r.height * 0.62 - res.y - 50;
+    } else {
+      state.view.x = r.width * 0.72 - res.x - 115;
+      state.view.y = r.height * 0.42 - res.y - 40;
+    }
     applyView();
   }
 
@@ -1214,10 +1244,15 @@
       scheduleSave();
     }
   }
+  function syncSegs() {
+    segSet($('#modeSeg'), 'mode', state.mode);
+    segSet($('#langSeg'), 'lang', window.FB_LANG);
+    segSet($('#langSeg2'), 'lang', window.FB_LANG);
+  }
   function setLang(l) {
     I.setLang(l);
     document.documentElement.lang = l;
-    segSet($('#langSeg'), 'lang', l);
+    syncSegs();
     applyTexts();
     buildLibrary();
     Object.values(state.g.nodes).forEach(n => renderNode(n, true));
@@ -1235,7 +1270,7 @@
     document.querySelectorAll('[data-t]').forEach(e => { e.textContent = t(e.dataset.t); });
     dom.libSearch.placeholder = t('search');
     document.title = 'Formula Builder';
-    requestAnimationFrame(() => { segSet($('#modeSeg'), 'mode', state.mode); segSet($('#langSeg'), 'lang', window.FB_LANG); });
+    requestAnimationFrame(syncSegs);
   }
 
   /* --------------------------- SMALL WIDGETS ---------------------------- */
@@ -1309,7 +1344,70 @@
     }
   }
 
-  function closePanels() { dom.app.classList.remove('lib-open'); if (isCompact()) { dom.app.classList.remove('sb-open'); } }
+  function closePanels() { dom.app.classList.remove('lib-open'); if (isCompact()) { dom.app.classList.remove('sb-open'); } syncTabs(); }
+
+  /* ----------------------------- FOCUS MODE ----------------------------- */
+  // Hides every piece of interface and leaves only the canvas. The view is shifted so
+  // the blocks stay exactly where they are on screen while the bars disappear around them.
+  let focusMode = false, focusTimer = null;
+  function setFocus(on) {
+    if (on === focusMode) return;
+    focusMode = on;
+    clearTimeout(focusTimer);
+    const app = dom.app;
+    const keepInPlace = fn => {
+      const before = dom.wrap.getBoundingClientRect();
+      fn();
+      const after = dom.wrap.getBoundingClientRect();
+      state.view.x += before.left - after.left;
+      state.view.y += before.top - after.top;
+      applyView();
+    };
+    hideTooltip(); closeQuick(); $('#menu').hidden = true;
+    if (on && isCompact()) closePanels();
+    if (on) {
+      app.classList.remove('focus-in');
+      app.classList.add('focus-out');
+      focusTimer = setTimeout(() => {
+        keepInPlace(() => { app.classList.remove('focus-out'); app.classList.add('focus'); });
+        toast(t('focusOn'));
+      }, 230);
+    } else {
+      app.classList.remove('focus-out');
+      $('#toast').classList.remove('show');
+      keepInPlace(() => { app.classList.remove('focus'); app.classList.add('focus-in'); });
+      focusTimer = setTimeout(() => app.classList.remove('focus-in'), 450);
+    }
+  }
+
+  /* ------------------------- SHEETS (portrait) -------------------------- */
+  // Library and guide slide up from the bottom; drag the handle down to close them.
+  function bindSheetDrag(sheet, close) {
+    let st = null;
+    const handles = sheet.querySelectorAll('.sheet-grabber, .lib-head, .sb-head');
+    handles.forEach(h => {
+      h.addEventListener('pointerdown', ev => {
+        if (layout() !== 'portrait' || ev.target.closest('input, button')) return;
+        st = { y: ev.clientY, t: performance.now(), id: ev.pointerId, dy: 0 };
+        h.setPointerCapture(ev.pointerId);
+        sheet.style.transition = 'none';
+      });
+      h.addEventListener('pointermove', ev => {
+        if (!st || ev.pointerId !== st.id) return;
+        st.dy = Math.max(0, ev.clientY - st.y);
+        sheet.style.transform = `translateY(${st.dy}px)`;
+      });
+      const end = ev => {
+        if (!st || ev.pointerId !== st.id) return;
+        const speed = st.dy / Math.max(1, performance.now() - st.t);
+        sheet.style.transition = ''; sheet.style.transform = '';
+        if (st.dy > 110 || (st.dy > 30 && speed > 0.6)) close();
+        st = null;
+      };
+      h.addEventListener('pointerup', end);
+      h.addEventListener('pointercancel', end);
+    });
+  }
 
   /* ------------------------------- WIRING ------------------------------- */
   function bind() {
@@ -1345,12 +1443,30 @@
     $('#btnArrange').addEventListener('click', arrange);
     $('#btnHelp').addEventListener('click', toggleSidebarGuide);
     $('#btnSbClose').addEventListener('click', closeSidebar);
-    $('#btnLibrary').addEventListener('click', () => { dom.app.classList.remove('sb-open'); dom.app.classList.toggle('lib-open'); });
-    $('#btnLibClose').addEventListener('click', () => dom.app.classList.remove('lib-open'));
+    $('#btnLibrary').addEventListener('click', toggleLibrary);
+    $('#btnLibClose').addEventListener('click', closeLibrary);
+    $('#btnFocus').addEventListener('click', () => setFocus(true));
+    $('#btnFocusExit').addEventListener('click', () => setFocus(false));
+    $('#langSeg2').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) setLang(b.dataset.lang); });
+    $('#tabbar').addEventListener('click', ev => {
+      const b = ev.target.closest('[data-cmd]'); if (!b || b.disabled) return;
+      switch (b.dataset.cmd) {
+        case 'library': toggleLibrary(); break;
+        case 'undo': undo(); break;
+        case 'redo': redo(); break;
+        case 'arrange': closePanels(); arrange(); break;
+        case 'guide':
+          if (dom.app.classList.contains('sb-open')) closeSidebar();
+          else { sbTarget = selected && state.g.nodes[selected] ? sbTarget : null; openSidebar(); }
+          break;
+      }
+    });
+    bindSheetDrag($('#library'), closeLibrary);
+    bindSheetDrag($('#sidebar'), closeSidebar);
     $('#scrim').addEventListener('click', closePanels);
-    $('#btnMenu').addEventListener('click', () => { $('#menu').hidden = !$('#menu').hidden; });
+    $('#btnMenu').addEventListener('click', () => { $('#menu').hidden = !$('#menu').hidden; if (!$('#menu').hidden) segSet($('#langSeg2'), 'lang', window.FB_LANG); });
     $('#menu').addEventListener('click', ev => {
-      const b = ev.target.closest('button'); if (!b) return;
+      const b = ev.target.closest('button'); if (!b || b.closest('.menu-lang')) return;
       $('#menu').hidden = true;
       if (b.dataset.ex) importFormula(EXAMPLES[b.dataset.ex][window.FB_LANG === 'en' ? 1 : 0], true);
       else if (b.dataset.act === 'import') askImport();
@@ -1421,10 +1537,11 @@
       else if ((ev.key === 'Delete' || ev.key === 'Backspace') && !inField && selected) { ev.preventDefault(); deleteNode(selected); }
       else if (ev.key === 'Escape') {
         if (gesture && gesture.type === 'pending') { endWireVisual(); gesture = null; }
+        else if (focusMode && $('#quick').hidden && $('#dialog').hidden) setFocus(false);
         closeQuick(); $('#menu').hidden = true;
       }
     });
-    window.addEventListener('resize', () => { segSet($('#modeSeg'), 'mode', state.mode); segSet($('#langSeg'), 'lang', window.FB_LANG); syncPanels(); });
+    window.addEventListener('resize', () => { syncSegs(); syncPanels(); });
   }
 
   function askImport() {
@@ -1435,14 +1552,21 @@
     });
   }
 
-  let wasCompact = null;
+  let lastLayout = null;
   function syncPanels() {
-    const c = isCompact();
-    if (c === wasCompact) return;
-    wasCompact = c;
-    if (c) dom.app.classList.remove('sb-open', 'lib-open');
+    const l = layout();
+    if (l === lastLayout) return;
+    const first = lastLayout === null;
+    lastLayout = l;
+    document.body.dataset.layout = l;
+    // panels never animate while the whole interface is being rearranged
+    dom.app.classList.add('no-anim');
+    if (l !== 'desktop') dom.app.classList.remove('sb-open', 'lib-open');
     else dom.app.classList.toggle('sb-open', state.sbOpen);
-    setTimeout(() => { remeasureAll(); drawWires(); }, 450);
+    syncTabs();
+    requestAnimationFrame(() => requestAnimationFrame(() => dom.app.classList.remove('no-anim')));
+    setTimeout(() => { remeasureAll(); drawWires(); syncSegs(); }, 60);
+    if (!first) setTimeout(() => fitView(true), 120);
   }
 
   /* -------------------------------- INIT -------------------------------- */
@@ -1462,7 +1586,7 @@
     updateUndoButtons();
     renderSidebar();
     // fonts can change node sizes after load
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { remeasureAll(); drawWires(); segSet($('#modeSeg'), 'mode', state.mode); segSet($('#langSeg'), 'lang', window.FB_LANG); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { remeasureAll(); drawWires(); syncSegs(); });
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
     }

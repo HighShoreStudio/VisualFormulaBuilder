@@ -45,6 +45,7 @@
   --toast-fg: #ffffff;
   --tip-bg: rgba(28,28,30,.94);
   --on-accent: #ffffff;
+  --scrim: rgba(0,0,0,.2);
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -73,6 +74,7 @@
     --toast-bg: rgba(242,242,247,.95);
     --toast-fg: #1c1c1e;
     --tip-bg: rgba(58,58,60,.96);
+    --scrim: rgba(0,0,0,.45);
   }
 }
 :root[data-theme="dark"] {
@@ -100,6 +102,7 @@
     --toast-bg: rgba(242,242,247,.95);
     --toast-fg: #1c1c1e;
     --tip-bg: rgba(58,58,60,.96);
+    --scrim: rgba(0,0,0,.45);
 }
 
 * { box-sizing: border-box; }
@@ -274,7 +277,7 @@ body.mode-gsheets .brand-logo { color: var(--sheets); }
 @keyframes draw { from { stroke-dasharray: 1 2000; } to { stroke-dasharray: 2000 0; } }
 
 .empty-hint {
-  position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%);
+  position: absolute; left: 35%; top: 42%; transform: translate(-50%, -50%);
   text-align: center; pointer-events: none; color: var(--text-2); max-width: 340px;
   animation: fade .5s var(--ease);
 }
@@ -565,27 +568,26 @@ body.mode-gsheets .fb-eq { background: var(--sheets); }
 }
 .tooltip.show { opacity: 1; transform: none; }
 
-.rotate {
-  display: none; position: fixed; inset: 0; z-index: 100; background: var(--bg);
-  flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; gap: 10px;
-}
-.rotate svg { width: 64px; height: 64px; color: var(--accent); stroke-width: 1.4; animation: rot 2.4s var(--ease) infinite; }
-@keyframes rot { 0%, 30% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
-.rot-title { font-size: 22px; font-weight: 700; }
-.rot-sub { font-size: 16px; color: var(--text-2); max-width: 300px; line-height: 1.45; }
-
 .drag-ghost {
   position: fixed; z-index: 70; pointer-events: none; padding: 10px 14px; border-radius: 12px;
   background: var(--surface); box-shadow: var(--shadow-3); border: 2px solid var(--c);
   font-family: var(--mono); font-weight: 700; transform: translate(-50%, -50%) rotate(-2deg);
 }
 
-.only-compact { display: none; }
+/* Elements that exist only in some layouts */
+.only-compact, .only-overlay, .tabbar, .focus-exit, .sheet-grabber, .menu-lang, .menu-lang-sep { display: none; }
+.l-short { display: none; }
 
-/* ------------------------- COMPACT (iPhone landscape) --------------------- */
-@media (max-height: 560px), (max-width: 1080px) {
+/* menu language row (used where the top language switch is hidden) */
+.menu-lang { align-items: center; gap: 12px; min-height: 48px; padding: 0 6px 0 12px; font-size: 15px; }
+.menu-lang .segmented { margin-left: auto; }
+
+/* =========================================================================
+   LAYOUT 2 — COMPACT LANDSCAPE (iPhone landscape, small windows)
+   ========================================================================= */
+@media (orientation: landscape) and (max-height: 560px), (orientation: landscape) and (max-width: 1080px) {
   :root { --tb-h: 52px; --lib-w: 300px; --sb-w: 340px; }
-  .only-compact { display: inline-grid; }
+  .only-compact, .only-overlay { display: inline-grid; }
   .workspace, .app.sb-open .workspace { grid-template-columns: 1fr !important; }
   .canvas-wrap { grid-column: 1; grid-row: 1; }
   .library, .sidebar {
@@ -596,7 +598,7 @@ body.mode-gsheets .fb-eq { background: var(--sheets); }
   .app.lib-open .library { transform: none; }
   .sidebar { right: 0; width: calc(var(--sb-w) + var(--sar)); transform: translateX(105%); }
   .app.sb-open .sidebar { transform: none; }
-  .scrim { display: block; position: absolute; inset: 0; z-index: 35; background: rgba(0,0,0,.18); opacity: 0; pointer-events: none; transition: opacity .3s; }
+  .scrim { display: block; position: absolute; inset: 0; z-index: 35; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity .3s; }
   .app.lib-open .scrim, .app.sb-open .scrim { opacity: 1; pointer-events: auto; }
   .brand-name { display: none; }
   .segmented button { padding: 0 12px; min-height: 34px; font-size: 14px; }
@@ -611,15 +613,140 @@ body.mode-gsheets .fb-eq { background: var(--sheets); }
   .zoom-ctrl { right: calc(12px + var(--sar)); bottom: 12px; }
   .zoom-ctrl #btnFit { display: none; }
 }
-@media (max-height: 460px) {
-  .tb-right .segmented.small { display: none; }
+@media (orientation: landscape) and (max-height: 460px) {
+  .tb-right > .segmented.small { display: none; }
+  .menu-lang { display: flex; }
+  .menu-lang-sep { display: block; }
   .zoom-ctrl { display: none; }
   .menu { max-height: calc(100vh - 70px); overflow-y: auto; }
 }
-/* portrait phones: ask to rotate */
-@media (orientation: portrait) and (max-width: 700px) {
-  .rotate { display: flex; }
+
+/* =========================================================================
+   LAYOUT 3 — PORTRAIT (vertical phones and vertical PC monitors)
+   Top bar · canvas · formula card · tab bar. Blocks and guide open as sheets.
+   ========================================================================= */
+@media (orientation: portrait) {
+  :root { --tb-h: 56px; }
+  .app { grid-template-rows: calc(var(--tb-h) + var(--sat)) 1fr auto auto; }
+
+  /* top bar: logo · program · canvas-only · menu */
+  .topbar { gap: 8px; padding-left: max(14px, var(--sal)); padding-right: max(10px, var(--sar)); }
+  .tb-left, .tb-right { flex: 0 0 auto; }
+  .tb-center { flex: 1; }
+  #btnUndo, #btnRedo, #btnArrange, #langSeg, #btnHelp, #btnLibrary { display: none; }
+  .menu-lang { display: flex; }
+  .menu-lang-sep { display: block; }
+  .menu { max-height: calc(100dvh - 90px); overflow-y: auto; }
+
+  /* canvas takes the whole width */
+  .workspace, .app.sb-open .workspace { grid-template-columns: 1fr !important; }
+  .canvas-wrap { grid-column: 1; grid-row: 1; }
+
+  /* sheets */
+  .library, .sidebar {
+    position: fixed; left: 0; right: 0; top: auto; bottom: 0; z-index: 45;
+    width: auto; height: 82vh; height: min(82dvh, 980px);
+    padding: 0 max(0px, var(--sar)) 0 max(0px, var(--sal));
+    border: 0; border-radius: 18px 18px 0 0; box-shadow: var(--shadow-3);
+    transform: translateY(105%); transition: transform .45s var(--ease);
+  }
+  .app.lib-open .library, .app.sb-open .sidebar { transform: none; }
+  .sheet-grabber { display: block; flex: none; width: 40px; height: 5px; border-radius: 3px; background: var(--line-strong); margin: 8px auto 0; touch-action: none; }
+  .lib-head, .sb-head { touch-action: none; }
+  .lib-head, .lib-list, .sb-head, .sb-body { width: 100%; max-width: 860px; margin-left: auto; margin-right: auto; }
+  .lib-list { padding-bottom: calc(24px + var(--sab)); }
+  .cat-items > div { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); column-gap: 8px; }
+  .sb-head { padding: 8px 12px 0 20px; }
+  .sb-body { padding-bottom: calc(32px + var(--sab)); }
+  .only-overlay { display: inline-grid; }
+  .scrim { display: block; position: fixed; inset: 0; z-index: 40; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity .35s; }
+  .app.lib-open .scrim, .app.sb-open .scrim { opacity: 1; pointer-events: auto; }
+
+  /* formula card: header row (status + actions) and code below */
+  .formulabar {
+    display: grid; grid-template-columns: auto 1fr; grid-template-areas: "label actions" "code code";
+    align-items: center; gap: 8px 10px;
+    padding: 10px max(14px, var(--sar)) 10px max(14px, var(--sal));
+  }
+  .fb-label { grid-area: label; height: 38px; }
+  .fb-actions { grid-area: actions; height: 38px; justify-content: flex-end; }
+  .fb-code-wrap { grid-area: code; max-height: 22vh; }
+  .fb-code { font-size: 15px; padding: 9px 12px; min-height: 42px; }
+  #btnImport { display: none; }
+  .fb-actions .btn { height: 38px; }
+  .fb-actions .btn.ghost span { display: none; }
+  .fb-actions .btn.ghost { width: 40px; padding: 0; }
+
+  /* tab bar */
+  .tabbar {
+    display: flex; justify-content: space-around; z-index: 26;
+    padding: 4px max(8px, var(--sar)) calc(4px + var(--sab)) max(8px, var(--sal));
+    background: var(--material); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-top: 1px solid var(--line);
+  }
+  .tab {
+    flex: 1; max-width: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    min-height: 50px; border-radius: 12px; font-size: 11.5px; font-weight: 600; color: var(--text-2);
+    transition: color .2s, background .2s, transform .15s var(--ease);
+  }
+  .tab svg { width: 25px; height: 25px; }
+  .tab:active { transform: scale(.92); }
+  .tab.on { color: var(--accent); }
+  .tab:disabled { opacity: .35; }
+
+  .zoom-ctrl { right: max(12px, var(--sar)); bottom: 12px; }
+  .empty-hint { left: 50%; top: 27%; }
+  .toast { top: calc(var(--tb-h) + var(--sat) + 12px); bottom: auto; transform: translate(-50%, -16px); }
+  .toast.show { transform: translate(-50%, 0); }
 }
+@media (orientation: portrait) and (max-width: 560px) {
+  .brand-name { display: none; }
+  .l-long { display: none; }
+  .l-short { display: inline; }
+  .segmented button { padding: 0 14px; min-height: 36px; }
+  .fb-label span:not(.fb-eq) { display: none; }
+}
+@media (orientation: portrait) and (max-width: 400px) {
+  .fb-actions .btn.primary span { display: none; }
+  .fb-actions .btn.primary { width: 44px; padding: 0; }
+}
+@media (orientation: portrait) and (hover: none) {
+  .zoom-ctrl { display: none; }
+}
+
+/* =========================================================================
+   CANVAS-ONLY MODE (every layout)
+   ========================================================================= */
+.app.focus { grid-template-rows: 1fr !important; }
+.app.focus .topbar, .app.focus .formulabar, .app.focus .tabbar,
+.app.focus .library, .app.focus .sidebar, .app.focus .scrim, .app.focus .zoom-ctrl { display: none !important; }
+.app.focus .workspace { grid-template-columns: 1fr !important; }
+.app.focus .focus-exit { display: grid; }
+.focus-exit {
+  position: fixed; z-index: 50; place-items: center;
+  top: calc(12px + var(--sat)); right: max(12px, calc(12px + var(--sar)));
+  width: 48px; height: 48px; border-radius: 24px; color: var(--text);
+  background: var(--material); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border: 1px solid var(--line); box-shadow: var(--shadow-2);
+  animation: pop .35s var(--spring) both;
+  transition: transform .15s var(--ease);
+}
+.focus-exit:active { transform: scale(.9); }
+.focus-exit svg { width: 22px; height: 22px; }
+/* leaving: bars slide away first, then the layout collapses */
+.app.focus-out .topbar { transform: translateY(-100%); opacity: 0; }
+.app.focus-out .formulabar, .app.focus-out .tabbar { transform: translateY(100%); opacity: 0; }
+.app.focus-out .zoom-ctrl { opacity: 0; transform: scale(.9); }
+body[data-layout="desktop"] .app.focus-out .library { transform: translateX(-100%); opacity: 0; transition: transform .23s var(--ease), opacity .23s; }
+body[data-layout="desktop"] .app.focus-out .sidebar { transform: translateX(100%); opacity: 0; transition: transform .23s var(--ease), opacity .23s; }
+.topbar, .formulabar, .tabbar, .zoom-ctrl { transition: transform .23s var(--ease), opacity .23s var(--ease); }
+/* coming back: bars slide in */
+.app.focus-in .topbar { animation: inTop .4s var(--ease); }
+.app.focus-in .formulabar, .app.focus-in .tabbar { animation: inBottom .4s var(--ease); }
+@keyframes inTop { from { transform: translateY(-100%); opacity: 0; } }
+@keyframes inBottom { from { transform: translateY(100%); opacity: 0; } }
+.app.no-anim .library, .app.no-anim .sidebar, .app.no-anim .scrim { transition: none !important; }
+
 @media (hover: none) {
   .tooltip { display: none; }
 }
