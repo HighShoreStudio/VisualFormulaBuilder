@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Formula Builder</title>
+  <meta name="description" content="Crea formule di Excel e Google Fogli collegando blocchi visivi.">
+  <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c1c1e" media="(prefers-color-scheme: dark)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Formule">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- SVG icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+      <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></symbol>
+      <symbol id="i-arrange" viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="6" rx="1.5"/><rect x="3" y="14" width="7" height="6" rx="1.5"/><rect x="14" y="9" width="7" height="6" rx="1.5"/><path d="M10 7h2v10h-2M12 12h2"/></symbol>
+      <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></symbol>
+      <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.8-2.5 2.2-2.5 3.9"/><circle cx="12" cy="17.2" r=".6"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+      <symbol id="i-lines" viewBox="0 0 24 24"><path d="M4 6h16M8 12h12M8 18h12M4 12h0M4 18h0"/></symbol>
+      <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+      <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></symbol>
+      <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+      <symbol id="i-blocks" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><path d="M17 14v6M14 17h6"/></symbol>
+      <symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M15 4v16"/></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+      <symbol id="i-save" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></symbol>
+      <symbol id="i-open" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+      <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></symbol>
+      <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 2.8 19a1 1 0 0 0 .9 1.5h16.6a1 1 0 0 0 .9-1.5z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".6"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-rotate" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18.5h4"/></symbol>
+      <symbol id="i-logo" viewBox="0 0 32 32"><rect x="1" y="1" width="30" height="30" rx="8" fill="currentColor" stroke="none"/><text x="16" y="21.5" text-anchor="middle" font-family="-apple-system,Segoe UI,sans-serif" font-size="14" font-weight="700" font-style="italic" fill="#fff" stroke="none">fx</text></symbol>
+    </defs>
+  </svg>
+
+  <div id="app" class="app">
+    <!-- ============ TOP BAR ============ -->
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="icon-btn only-compact" id="btnLibrary" data-tip="libraryTip"><svg><use href="#i-blocks"/></svg></button>
+        <div class="brand"><svg class="brand-logo"><use href="#i-logo"/></svg><span class="brand-name">Formula Builder</span></div>
+      </div>
+      <div class="tb-center">
+        <div class="segmented" id="modeSeg" data-tip="modeTip" role="tablist">
+          <button data-mode="excel" role="tab"><span class="dot dot-excel"></span><span data-t="modeExcel"></span></button>
+          <button data-mode="gsheets" role="tab"><span class="dot dot-sheets"></span><span data-t="modeSheets"></span></button>
+          <span class="seg-thumb"></span>
+        </div>
+      </div>
+      <div class="tb-right">
+        <button class="icon-btn" id="btnUndo" data-tip="undo"><svg><use href="#i-undo"/></svg></button>
+        <button class="icon-btn" id="btnRedo" data-tip="redo"><svg><use href="#i-redo"/></svg></button>
+        <button class="icon-btn" id="btnArrange" data-tip="arrangeTip"><svg><use href="#i-arrange"/></svg></button>
+        <div class="segmented small" id="langSeg" data-tip="langTip">
+          <button data-lang="it">IT</button><button data-lang="en">EN</button><span class="seg-thumb"></span>
+        </div>
+        <button class="icon-btn" id="btnHelp" data-tip="helpTip"><svg><use href="#i-sidebar"/></svg></button>
+        <div class="menu-wrap">
+          <button class="icon-btn" id="btnMenu" data-tip="menu"><svg><use href="#i-more"/></svg></button>
+          <div class="menu" id="menu" hidden>
+            <button data-act="import"><svg><use href="#i-import"/></svg><span data-t="importF"></span></button>
+            <div class="menu-sub">
+              <div class="menu-label" data-t="examples"></div>
+              <button data-ex="1"><svg><use href="#i-spark"/></svg><span data-t="ex1"></span></button>
+              <button data-ex="2"><svg><use href="#i-spark"/></svg><span data-t="ex2"></span></button>
+              <button data-ex="3"><svg><use href="#i-spark"/></svg><span data-t="ex3"></span></button>
+              <button data-ex="4"><svg><use href="#i-spark"/></svg><span data-t="ex4"></span></button>
+              <button data-ex="5"><svg><use href="#i-spark"/></svg><span data-t="ex5"></span></button>
+              <button data-ex="6"><svg><use href="#i-spark"/></svg><span data-t="ex6"></span></button>
+            </div>
+            <div class="menu-sep"></div>
+            <button data-act="save"><svg><use href="#i-save"/></svg><span data-t="saveFile"></span></button>
+            <button data-act="open"><svg><use href="#i-open"/></svg><span data-t="openFile"></span></button>
+            <div class="menu-sep"></div>
+            <button data-act="new" class="danger"><svg><use href="#i-trash"/></svg><span data-t="newGraph"></span></button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ WORKSPACE ============ -->
+    <main class="workspace">
+      <aside class="library" id="library">
+        <div class="lib-head">
+          <div class="search">
+            <svg><use href="#i-search"/></svg>
+            <input id="libSearch" type="search" autocomplete="off" spellcheck="false">
+          </div>
+          <button class="icon-btn only-compact" id="btnLibClose" data-tip="closePanel"><svg><use href="#i-close"/></svg></button>
+        </div>
+        <div class="lib-list" id="libList"></div>
+      </aside>
+
+      <section class="canvas-wrap" id="canvasWrap">
+        <div class="canvas" id="canvas">
+          <svg class="wires" id="wires"></svg>
+          <div class="nodes" id="nodes"></div>
+        </div>
+        <div class="empty-hint" id="emptyHint" hidden>
+          <div class="eh-icon"><svg><use href="#i-blocks"/></svg></div>
+          <div class="eh-title" data-t="emptyHintTitle"></div>
+          <div class="eh-text" data-t="emptyHint"></div>
+        </div>
+        <div class="zoom-ctrl">
+          <button class="icon-btn" id="btnZoomOut" data-tip="zoomOut"><svg><use href="#i-minus"/></svg></button>
+          <button class="zoom-val" id="zoomVal" data-tip="fit">100%</button>
+          <button class="icon-btn" id="btnZoomIn" data-tip="zoomIn"><svg><use href="#i-plus"/></svg></button>
+          <button class="icon-btn" id="btnFit" data-tip="fit"><svg><use href="#i-fit"/></svg></button>
+        </div>
+      </section>
+
+      <aside class="sidebar" id="sidebar">
+        <div class="sb-head">
+          <div class="sb-title" data-t="explain"></div>
+          <button class="icon-btn" id="btnSbClose" data-tip="closePanel"><svg><use href="#i-close"/></svg></button>
+        </div>
+        <div class="sb-body" id="sbBody"></div>
+      </aside>
+      <div class="scrim" id="scrim"></div>
+    </main>
+
+    <!-- ============ FORMULA BAR ============ -->
+    <footer class="formulabar" id="formulaBar">
+      <div class="fb-label"><span class="fb-eq">=</span><span data-t="formula"></span></div>
+      <div class="fb-code-wrap"><pre class="fb-code" id="fbCode"></pre></div>
+      <div class="fb-actions">
+        <button class="status-pill" id="statusPill"></button>
+        <button class="btn ghost toggle" id="btnPretty" data-tip="multilineTip"><svg><use href="#i-lines"/></svg><span data-t="multiline"></span></button>
+        <button class="btn ghost" id="btnImport" data-tip="importTip"><svg><use href="#i-import"/></svg><span data-t="importF"></span></button>
+        <button class="btn primary" id="btnCopy" data-tip="copyTip"><svg><use href="#i-copy"/></svg><span data-t="copy"></span></button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Quick add popup -->
+  <div class="quick" id="quick" hidden>
+    <div class="search"><svg><use href="#i-search"/></svg><input id="quickInput" type="search" autocomplete="off" spellcheck="false"></div>
+    <div class="quick-list" id="quickList"></div>
+  </div>
+
+  <!-- Dialog -->
+  <div class="dialog-backdrop" id="dialog" hidden>
+    <div class="dialog" role="dialog" aria-modal="true">
+      <div class="dlg-title" id="dlgTitle"></div>
+      <div class="dlg-text" id="dlgText"></div>
+      <textarea id="dlgArea" spellcheck="false" hidden></textarea>
+      <div class="dlg-err" id="dlgErr" hidden></div>
+      <div class="dlg-actions">
+        <button class="btn ghost" id="dlgCancel"></button>
+        <button class="btn primary" id="dlgOk"></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="tooltip" id="tooltip"></div>
+  <div class="rotate" id="rotate">
+    <svg><use href="#i-rotate"/></svg>
+    <div class="rot-title" data-t="rotate"></div>
+    <div class="rot-sub" data-t="rotateSub"></div>
+  </div>
+  <input type="file" id="fileInput" accept=".json,application/json" hidden>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/functions.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
