@@ -3,6 +3,7 @@
    ========================================================================= */
 (function () {
   'use strict';
+  const APP_VERSION = '1.2';
   const C = window.FB_CATALOG, E = window.FB_ENGINE, I = window.FB_I18N;
   const t = I.t, L = I.L;
   const $ = s => document.querySelector(s);
@@ -360,11 +361,13 @@
 
   /* ---------------------------- PERSISTENCE ----------------------------- */
   let saveTimer = null;
+  function saveNow() {
+    clearTimeout(saveTimer);
+    try { localStorage.setItem('fb.state', JSON.stringify({ g: state.g, mode: state.mode, pretty: state.pretty, view: state.view, sbOpen: state.sbOpen })); } catch (e) { /* ignore */ }
+  }
   function scheduleSave() {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => {
-      try { localStorage.setItem('fb.state', JSON.stringify({ g: state.g, mode: state.mode, pretty: state.pretty, view: state.view, sbOpen: state.sbOpen })); } catch (e) { /* ignore */ }
-    }, 250);
+    saveTimer = setTimeout(saveNow, 250);
   }
   function load() {
     try {
@@ -1132,7 +1135,7 @@
       <div class="sb-h">${esc(t('welcomeTips'))}</div>
       <ul class="tricks"><li>${esc(t('trick1'))}</li><li>${esc(t('trick2'))}</li><li>${esc(t('trick3'))}</li><li>${esc(t('trick4'))}</li><li>${esc(t('trick5'))}</li><li>${esc(t('trick6'))}</li></ul>
       <div class="sb-h">${esc(t('modesTitle'))}</div><p class="sb-p">${esc(t('modesText'))}</p>
-      <div class="sb-foot">${esc(t('sourceGS'))}</div>`;
+      <div class="sb-foot">${esc(t('sourceGS'))}<br>Formula Builder v${APP_VERSION}</div>`;
   }
   function bindSidebar() {
     dom.sbBody.querySelectorAll('[data-sb]').forEach(btn => btn.addEventListener('click', () => {
@@ -1587,8 +1590,21 @@
     renderSidebar();
     // fonts can change node sizes after load
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { remeasureAll(); drawWires(); syncSegs(); });
+    $('#menuVer').textContent = 'Formula Builder v' + APP_VERSION;
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+      // when a new version is published the new service worker takes over and the page
+      // reloads once by itself, so nobody stays stuck on old files
+      const hadController = !!navigator.serviceWorker.controller;
+      let reloading = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!hadController || reloading) return;
+        reloading = true;
+        saveNow();
+        location.reload();
+      });
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+        .then(reg => { reg.update().catch(() => {}); document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); }); })
+        .catch(() => {});
     }
   }
   init();
