@@ -1,7 +1,7 @@
 /* Formula Builder — service worker
    Always asks the server for the latest files (so updates show up right away)
    and falls back to the saved copy only when the device is offline. */
-const VERSION = '1.2';
+const VERSION = '1.3';
 const CACHE = 'formula-builder-' + VERSION;
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',

@@ -3,7 +3,7 @@
    ========================================================================= */
 (function () {
   'use strict';
-  const APP_VERSION = '1.2';
+  const APP_VERSION = '1.3';
   const C = window.FB_CATALOG, E = window.FB_ENGINE, I = window.FB_I18N;
   const t = I.t, L = I.L;
   const $ = s => document.querySelector(s);
@@ -17,6 +17,7 @@
   const MQ_COMPACT = window.matchMedia('(orientation: landscape) and (max-height: 560px), (orientation: landscape) and (max-width: 1080px)');
   const layout = () => MQ_PORTRAIT.matches ? 'portrait' : MQ_COMPACT.matches ? 'compact' : 'desktop';
   const isCompact = () => layout() !== 'desktop'; // panels float over the canvas
+  const MQ_TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)');
 
   /* ------------------------------- STATE -------------------------------- */
   const state = {
@@ -703,6 +704,12 @@
     if (nodeE) {
       const id = nodeE.dataset.id;
       select(id);
+      if (locked()) {
+        // blocks are locked: pressing on a block moves the board instead of the block
+        gesture = { type: 'pan', fromNode: true, start: { x: ev.clientX, y: ev.clientY }, orig: { x: state.view.x, y: state.view.y }, moved: false, t: performance.now() };
+        dom.wrap.setPointerCapture(ev.pointerId);
+        return;
+      }
       const n = state.g.nodes[id];
       gesture = { type: 'drag', id, start: { x: ev.clientX, y: ev.clientY }, orig: { x: n.x, y: n.y }, moved: false };
       dom.wrap.setPointerCapture(ev.pointerId);
@@ -742,7 +749,9 @@
     const g = gesture;
     dom.wrap.classList.remove('panning');
     if (g.type === 'pan') {
-      if (!g.moved) {
+      if (!g.moved && g.fromNode) {
+        // a simple tap on a locked block just selects it
+      } else if (!g.moved) {
         const now = performance.now();
         if (lastBgTap && now - lastBgTap.t < 350 && Math.hypot(ev.clientX - lastBgTap.x, ev.clientY - lastBgTap.y) < 20) {
           openQuick(ev.clientX, ev.clientY, null);
@@ -1133,7 +1142,7 @@
     return `<div class="sb-hero"><span class="node-icon" style="background:var(--accent)">?</span><div><div class="sb-name" style="font-family:var(--font)">${esc(t('welcomeTitle'))}</div><div class="sb-friendly">Formula Builder</div></div></div>
       <ol class="steps"><li>${esc(t('welcome1'))}</li><li>${esc(t('welcome2'))}</li><li>${esc(t('welcome3'))}</li><li>${esc(t('welcome4'))}</li></ol>
       <div class="sb-h">${esc(t('welcomeTips'))}</div>
-      <ul class="tricks"><li>${esc(t('trick1'))}</li><li>${esc(t('trick2'))}</li><li>${esc(t('trick3'))}</li><li>${esc(t('trick4'))}</li><li>${esc(t('trick5'))}</li><li>${esc(t('trick6'))}</li></ul>
+      <ul class="tricks"><li>${esc(t('trick1'))}</li><li>${esc(t('trick2'))}</li><li>${esc(t('trick3'))}</li><li>${esc(t('trick4'))}</li><li>${esc(t('trick5'))}</li><li>${esc(t('trick6'))}</li><li>${esc(t('trick7'))}</li></ul>
       <div class="sb-h">${esc(t('modesTitle'))}</div><p class="sb-p">${esc(t('modesText'))}</p>
       <div class="sb-foot">${esc(t('sourceGS'))}<br>Formula Builder v${APP_VERSION}</div>`;
   }
@@ -1256,6 +1265,7 @@
     I.setLang(l);
     document.documentElement.lang = l;
     syncSegs();
+    renderLock();
     applyTexts();
     buildLibrary();
     Object.values(state.g.nodes).forEach(n => renderNode(n, true));
@@ -1348,6 +1358,28 @@
   }
 
   function closePanels() { dom.app.classList.remove('lib-open'); if (isCompact()) { dom.app.classList.remove('sb-open'); } syncTabs(); }
+
+  /* ----------------------------- LOCK BLOCKS ---------------------------- */
+  // Touch devices only: while locked, dragging a block pans the board, so blocks
+  // are never moved by mistake. Inputs, menus and wires keep working.
+  let nodesLocked = false;
+  try { nodesLocked = localStorage.getItem('fb.lock') === '1'; } catch (e) { /* storage unavailable */ }
+  const locked = () => nodesLocked && MQ_TOUCH.matches;
+  function renderLock() {
+    const b = $('#btnLock');
+    b.classList.toggle('on', nodesLocked);
+    b.setAttribute('aria-pressed', nodesLocked ? 'true' : 'false');
+    b.setAttribute('aria-label', t(nodesLocked ? 'unlockTip' : 'lockTip'));
+    b.dataset.tip = nodesLocked ? 'unlockTip' : 'lockTip';
+    b.querySelector('use').setAttribute('href', nodesLocked ? '#i-lock' : '#i-unlock');
+    dom.app.classList.toggle('nodes-locked', nodesLocked);
+  }
+  function setLock(on) {
+    nodesLocked = on;
+    try { localStorage.setItem('fb.lock', on ? '1' : '0'); } catch (e) { /* ignore */ }
+    renderLock();
+    toast(t(on ? 'lockOn' : 'lockOff'), on ? 'ok' : null);
+  }
 
   /* ----------------------------- FOCUS MODE ----------------------------- */
   // Hides every piece of interface and leaves only the canvas. The view is shifted so
@@ -1450,6 +1482,7 @@
     $('#btnLibClose').addEventListener('click', closeLibrary);
     $('#btnFocus').addEventListener('click', () => setFocus(true));
     $('#btnFocusExit').addEventListener('click', () => setFocus(false));
+    $('#btnLock').addEventListener('click', () => setLock(!nodesLocked));
     $('#langSeg2').addEventListener('click', ev => { const b = ev.target.closest('button'); if (b) setLang(b.dataset.lang); });
     $('#tabbar').addEventListener('click', ev => {
       const b = ev.target.closest('[data-cmd]'); if (!b || b.disabled) return;
@@ -1591,6 +1624,7 @@
     // fonts can change node sizes after load
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { remeasureAll(); drawWires(); syncSegs(); });
     $('#menuVer').textContent = 'Formula Builder v' + APP_VERSION;
+    renderLock();
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
       // when a new version is published the new service worker takes over and the page
       // reloads once by itself, so nobody stays stuck on old files

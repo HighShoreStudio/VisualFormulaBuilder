@@ -33,6 +33,7 @@
   --ease: cubic-bezier(.2, .8, .2, 1);
   --spring: cubic-bezier(.34, 1.4, .64, 1);
   --tb-h: 60px;
+  --tb-pl: calc(16px + env(safe-area-inset-left, 0px)); /* top bar left padding (the lock button sits there) */
   --lib-w: 288px;
   --sb-w: 360px;
   --sal: env(safe-area-inset-left, 0px);
@@ -131,7 +132,7 @@ svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width:
 /* ------------------------------ TOP BAR ------------------------------ */
 .topbar {
   display: flex; align-items: center; gap: 12px;
-  padding: var(--sat) calc(16px + var(--sar)) 0 calc(16px + var(--sal));
+  padding: var(--sat) calc(16px + var(--sar)) 0 var(--tb-pl);
   background: var(--material);
   backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
   border-bottom: 1px solid var(--line);
@@ -627,11 +628,11 @@ body.mode-gsheets .fb-eq { background: var(--sheets); }
    Top bar · canvas · formula card · tab bar. Blocks and guide open as sheets.
    ========================================================================= */
 @media (orientation: portrait) {
-  :root { --tb-h: 56px; }
+  :root { --tb-h: 56px; --tb-pl: max(14px, env(safe-area-inset-left, 0px)); }
   .app { grid-template-rows: calc(var(--tb-h) + var(--sat)) 1fr auto auto; }
 
   /* top bar: logo · program · canvas-only · menu */
-  .topbar { gap: 8px; padding-left: max(14px, var(--sal)); padding-right: max(10px, var(--sar)); }
+  .topbar { gap: 8px; padding-left: var(--tb-pl); padding-right: max(10px, var(--sar)); }
   .tb-left, .tb-right { flex: 0 0 auto; }
   .tb-center { flex: 1; }
   #btnUndo, #btnRedo, #btnArrange, #langSeg, #btnHelp, #btnLibrary { display: none; }
@@ -747,6 +748,34 @@ body[data-layout="desktop"] .app.focus-out .sidebar { transform: translateX(100%
 @keyframes inTop { from { transform: translateY(-100%); opacity: 0; } }
 @keyframes inBottom { from { transform: translateY(100%); opacity: 0; } }
 .app.no-anim .library, .app.no-anim .sidebar, .app.no-anim .scrim { transition: none !important; }
+
+/* =========================================================================
+   LOCK BLOCKS (touch devices) — left side, same height as the canvas-only button.
+   Lives outside the top bar so it stays on screen in canvas-only mode.
+   ========================================================================= */
+.lock-slot, .lock-btn { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .lock-slot { display: block; flex: none; width: 44px; height: 44px; }
+  .lock-btn {
+    display: grid; place-items: center; position: fixed; z-index: 31;
+    left: var(--tb-pl); top: calc(var(--sat) + var(--tb-h) / 2 - 22px);
+    width: 44px; height: 44px; border-radius: 12px; color: var(--text-2);
+    border: 1px solid transparent;
+    transition: top .35s var(--ease), left .35s var(--ease), width .35s var(--ease), height .35s var(--ease),
+                border-radius .35s var(--ease), background .25s, color .25s, box-shadow .25s, transform .15s var(--ease);
+  }
+  .lock-btn svg { width: 23px; height: 23px; }
+  .lock-btn:active { transform: scale(.9); }
+  .lock-btn.on { background: var(--accent); color: var(--on-accent); box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
+  .app.focus .lock-btn {
+    z-index: 50; top: calc(12px + var(--sat)); left: max(12px, calc(12px + var(--sal)));
+    width: 48px; height: 48px; border-radius: 24px; color: var(--text);
+    background: var(--material); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-color: var(--line); box-shadow: var(--shadow-2);
+  }
+  .app.focus .lock-btn.on { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+  .app.nodes-locked .node-head { cursor: default; }
+}
 
 @media (hover: none) {
   .tooltip { display: none; }

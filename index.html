@@ -14,7 +14,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="css/styles.css?v=1.2">
+  <link rel="stylesheet" href="css/styles.css?v=1.3">
 </head>
 <body>
   <!-- SVG icon sprite -->
@@ -47,6 +47,8 @@
       <symbol id="i-unfocus" viewBox="0 0 24 24"><path d="M9 4v4a1 1 0 0 1-1 1H4M20 9h-4a1 1 0 0 1-1-1V4M15 20v-4a1 1 0 0 1 1-1h4M4 15h4a1 1 0 0 1 1 1v4"/></symbol>
       <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/></symbol>
       <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2"/></symbol>
+      <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 7.7-1.6"/></symbol>
       <symbol id="i-rotate" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18.5h4"/></symbol>
       <symbol id="i-logo" viewBox="0 0 32 32"><rect x="1" y="1" width="30" height="30" rx="8" fill="currentColor" stroke="none"/><text x="16" y="21.5" text-anchor="middle" font-family="-apple-system,Segoe UI,sans-serif" font-size="14" font-weight="700" font-style="italic" fill="#fff" stroke="none">fx</text></symbol>
     </defs>
@@ -56,6 +58,7 @@
     <!-- ============ TOP BAR ============ -->
     <header class="topbar">
       <div class="tb-left">
+        <span class="lock-slot" aria-hidden="true"></span>
         <button class="icon-btn only-compact" id="btnLibrary" data-tip="libraryTip"><svg><use href="#i-blocks"/></svg></button>
         <div class="brand"><svg class="brand-logo"><use href="#i-logo"/></svg><span class="brand-name">Formula Builder</span></div>
       </div>
@@ -169,6 +172,8 @@
     </nav>
 
     <button class="focus-exit" id="btnFocusExit" data-tip="focusExit"><svg><use href="#i-unfocus"/></svg></button>
+    <!-- touch devices only: stays visible in canvas-only mode too -->
+    <button class="lock-btn" id="btnLock" aria-pressed="false"><svg><use href="#i-unlock"/></svg></button>
   </div>
 
   <!-- Quick add popup -->
@@ -195,9 +200,9 @@
   <div class="tooltip" id="tooltip"></div>
   <input type="file" id="fileInput" accept=".json,application/json" hidden>
 
-  <script src="js/i18n.js?v=1.2"></script>
-  <script src="js/functions.js?v=1.2"></script>
-  <script src="js/engine.js?v=1.2"></script>
-  <script src="js/app.js?v=1.2"></script>
+  <script src="js/i18n.js?v=1.3"></script>
+  <script src="js/functions.js?v=1.3"></script>
+  <script src="js/engine.js?v=1.3"></script>
+  <script src="js/app.js?v=1.3"></script>
 </body>
 </html>
